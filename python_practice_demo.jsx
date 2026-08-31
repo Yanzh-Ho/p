@@ -602,6 +602,47 @@ const TOPICS = [
 
 const STAGES = [...new Set(TOPICS.map((t) => t.stage))];
 
+const STAGE_INTROS = {
+  "第一階段 · 入門基礎": {
+    subtitle: "為什麼從這裡開始？",
+    body:
+      "變數、字串、型別，就像 Excel 儲存格跟資料格式的程式版本，是後面所有資料處理、報表、系統開發的地基。資管系平常用 Excel、SQL 整理資料，這一階段學的東西，就是「用程式取代手動複製貼上」的第一步——先能正確地把資料存起來、印出來，才有辦法談自動化。",
+  },
+  "第二階段 · 邏輯建構": {
+    subtitle: "讓程式自己判斷、自己重複做事",
+    body:
+      "if/else、迴圈、list、dict，是把「人工判斷」跟「重複作業」自動化的核心工具。工作上最常見的「篩選出消費超過1000的會員」「把一整批訂單金額加總」，本質上都只是這階段學的邏輯——差別只在於資料量從10筆變成10萬筆時，人腦做不到，但程式可以。",
+  },
+  "第三階段 · 程式模組化": {
+    subtitle: "把邏輯包成可以重複使用的積木",
+    body:
+      "函式讓你把一段邏輯包起來、取個名字，之後隨時呼叫，不用每次重寫；try/except 讓程式遇到「爛資料」時不會直接當機。這在處理別人給的 Excel、表單、API 資料時特別重要，因為現實中的資料很少是乾淨的——這階段練的就是「寫出禁得起爛資料考驗的程式」。",
+  },
+  "第四階段 · 物件導向與進階": {
+    subtitle: "用「物件」描述真實世界的商業實體",
+    body:
+      "class 可以把「顧客」「訂單」「員工」這些商業實體，變成一個個有資料（屬性）、有行為（方法）的程式物件，這正是企業資訊系統（ERP、CRM、電商後台）背後的基本設計方式。資管系學物件導向，不是為了考試，而是為了看懂、甚至參與設計一套真正的系統。",
+  },
+  "第五階段 · 實戰專案": {
+    subtitle: "把工具組合起來，解決真實問題",
+    body:
+      "這階段不再教新語法，而是練習把前面所有工具（迴圈、字典、函式、class）組合起來，處理接近真實工作場景的任務：篩選資料、排序、分組彙總、做一個小型系統。這也是資管系畢業後最常被要求的能力——不是「會寫程式」，而是「能用程式解決商業問題」。",
+  },
+};
+
+const PROGRESS_STORAGE_KEY = "python-notebook-progress-v1";
+
+function loadStoredProgress() {
+  try {
+    const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function indentBody(code) {
   return code
     .split("\n")
@@ -617,17 +658,31 @@ function normalizeLoose(str) {
 }
 
 function PythonNotebook() {
+  const storedProgressRef = useRef(loadStoredProgress());
   const [activeId, setActiveId] = useState(TOPICS[0].id);
-  const [codeById, setCodeById] = useState(
-    Object.fromEntries(TOPICS.map((t) => [t.id, t.starter]))
-  );
+  const [codeById, setCodeById] = useState(() => ({
+    ...Object.fromEntries(TOPICS.map((t) => [t.id, t.starter])),
+    ...(storedProgressRef.current?.codeById ?? {}),
+  }));
   const [outputById, setOutputById] = useState({});
   const [statusById, setStatusById] = useState({});
-  const [doneIds, setDoneIds] = useState({});
+  const [doneIds, setDoneIds] = useState(() => storedProgressRef.current?.doneIds ?? {});
   const [hintShownById, setHintShownById] = useState({});
+  const [introCollapsed, setIntroCollapsed] = useState({});
   const [pyodideState, setPyodideState] = useState("loading");
   const [running, setRunning] = useState(false);
   const pyodideRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PROGRESS_STORAGE_KEY,
+        JSON.stringify({ doneIds, codeById })
+      );
+    } catch {
+      // localStorage 不可用（例如無痕模式）時，靜默略過即可
+    }
+  }, [doneIds, codeById]);
 
   const active = TOPICS.find((t) => t.id === activeId);
 
@@ -704,6 +759,9 @@ function PythonNotebook() {
     }
   }, [active, codeById]);
 
+  const doneCount = Object.values(doneIds).filter(Boolean).length;
+  const progressPercent = Math.round((doneCount / TOPICS.length) * 100);
+
   return (
     <div
       style={{
@@ -732,6 +790,42 @@ function PythonNotebook() {
         <h1 style={{ margin: "4px 0 0", fontSize: 26, fontWeight: 600 }}>
           Python 自學筆記
         </h1>
+
+        <div style={{ marginTop: 14, maxWidth: 420 }}>
+          <div
+            className="py-mono"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 11.5,
+              color: "#6B675E",
+              marginBottom: 5,
+            }}
+          >
+            <span>學習進度</span>
+            <span>
+              {doneCount} / {TOPICS.length}（{progressPercent}%）
+            </span>
+          </div>
+          <div
+            style={{
+              height: 6,
+              borderRadius: 3,
+              background: "#DCD6C8",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${progressPercent}%`,
+                background: "#3B4C9E",
+                borderRadius: 3,
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+        </div>
       </header>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
@@ -795,6 +889,66 @@ function PythonNotebook() {
         </nav>
 
         <main style={{ flex: 1, padding: "26px 34px 40px", overflowY: "auto" }}>
+          {STAGE_INTROS[active.stage] && (
+            <div
+              style={{
+                maxWidth: 640,
+                background: "#2B2A28",
+                color: "#EDEAE0",
+                borderRadius: 4,
+                padding: "18px 22px",
+                marginBottom: 22,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div
+                    className="py-mono"
+                    style={{ fontSize: 11.5, color: "#B9C2E8", letterSpacing: 0.4, marginBottom: 6 }}
+                  >
+                    階段導讀 · {active.stage}
+                  </div>
+                  <div style={{ fontSize: 16.5, fontWeight: 600 }}>
+                    {STAGE_INTROS[active.stage].subtitle}
+                  </div>
+                </div>
+                <button
+                  className="hint-btn py-mono"
+                  onClick={() =>
+                    setIntroCollapsed((prev) => ({
+                      ...prev,
+                      [active.stage]: !prev[active.stage],
+                    }))
+                  }
+                  style={{
+                    background: "none",
+                    border: "1px solid #56544C",
+                    borderRadius: 3,
+                    color: "#EDEAE0",
+                    fontSize: 12,
+                    padding: "4px 10px",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {introCollapsed[active.stage] ? "展開" : "收合"}
+                </button>
+              </div>
+              {!introCollapsed[active.stage] && (
+                <p style={{ margin: "12px 0 0", lineHeight: 1.75, fontSize: 14.5, color: "#D8D2C4" }}>
+                  {STAGE_INTROS[active.stage].body}
+                </p>
+              )}
+            </div>
+          )}
+
           <div
             style={{
               position: "relative",
