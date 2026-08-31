@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+const { useState, useEffect, useRef, useCallback } = React;
 
 const FONTS_LINK_ID = "py-notebook-fonts";
 
@@ -366,7 +366,7 @@ function indentBody(code) {
     .join("\n");
 }
 
-export default function PythonNotebook() {
+function PythonNotebook() {
   const [activeId, setActiveId] = useState(TOPICS[0].id);
   const [codeById, setCodeById] = useState(
     Object.fromEntries(TOPICS.map((t) => [t.id, t.starter]))
