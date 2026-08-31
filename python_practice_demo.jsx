@@ -9,10 +9,11 @@ const TOPICS = [
     tag: "1-1",
     title: "你好，Python",
     note: "print() 是 Python 用來「說話」的方式。放進括號裡的文字要用引號包起來，Python 才知道那是要顯示的文字，不是指令本身。",
-    task: "修改下面的程式碼，讓它印出「Hello, Python!」（大小寫、標點都要一樣）。",
+    task: "修改下面的程式碼，讓它印出「Hello, Python!」。",
     starter: `print("Hello, World!")`,
     expected: "Hello, Python!",
     hint: '把引號裡的文字改成 "Hello, Python!" 就好，其他都不用動。',
+    loose: true,
   },
   {
     stage: "第一階段 · 入門基礎",
@@ -608,6 +609,13 @@ function indentBody(code) {
     .join("\n");
 }
 
+function normalizeLoose(str) {
+  return str
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .trim();
+}
+
 function PythonNotebook() {
   const [activeId, setActiveId] = useState(TOPICS[0].id);
   const [codeById, setCodeById] = useState(
@@ -683,7 +691,9 @@ function PythonNotebook() {
       const raw = pyodideRef.current.globals.get("_captured_output");
       const result = (raw ?? "").toString().replace(/\n+$/, "");
       setOutputById((prev) => ({ ...prev, [topic.id]: result }));
-      const pass = result.trim() === topic.expected.trim();
+      const pass = topic.loose
+        ? normalizeLoose(result) === normalizeLoose(topic.expected)
+        : result.trim() === topic.expected.trim();
       setStatusById((prev) => ({ ...prev, [topic.id]: pass ? "pass" : "fail" }));
       if (pass) setDoneIds((prev) => ({ ...prev, [topic.id]: true }));
     } catch (err) {
