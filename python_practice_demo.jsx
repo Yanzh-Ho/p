@@ -816,7 +816,8 @@ function PythonNotebook() {
       style={{
         fontFamily: "'Source Serif 4', Georgia, serif",
         background: "#EDEAE0",
-        minHeight: "100%",
+        height: "100%",
+        overflow: "hidden",
         color: "#2B2A28",
         display: "flex",
         flexDirection: "column",
