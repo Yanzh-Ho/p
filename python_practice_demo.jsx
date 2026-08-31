@@ -598,6 +598,50 @@ const TOPICS = [
     expected: "1",
     hint: '把方法內容改成：\nself.tasks[task_id]["done"] = True\nreturn len([t for t in self.tasks.values() if not t["done"]])',
   },
+  {
+    stage: "第六階段 · 期末專題",
+    id: "6-1",
+    tag: "6-1",
+    title: "檢核點一：庫存管理",
+    note: "add_stock 是整個系統的地基：新增庫存時，如果該商品原本就有庫存，要用「累加」的方式處理，而不是直接覆蓋掉舊的數量。",
+    task: "完成 add_stock，讓同一個商品重複進貨時，庫存數量會正確累加。",
+    starter: `class Store:\n    def __init__(self):\n        self.inventory = {}\n\n    def add_stock(self, name, qty):\n        self.inventory[name] = qty\n\nstore = Store()\nstore.add_stock("咖啡豆", 10)\nstore.add_stock("咖啡豆", 5)\nprint(store.inventory)`,
+    expected: "{'咖啡豆': 15}",
+    hint: "self.inventory[name] = self.inventory.get(name, 0) + qty",
+  },
+  {
+    stage: "第六階段 · 期末專題",
+    id: "6-2",
+    tag: "6-2",
+    title: "檢核點二：銷售與擋單",
+    note: "真正的系統不能讓庫存賣成負數。sell 方法要先檢查庫存夠不夠，不夠就主動 raise 例外，把「擋單」的責任交給呼叫端的 try/except 去處理。",
+    task: "完成 sell 方法：庫存不足時要 raise ValueError(\"庫存不足\")；庫存足夠才真的扣庫存，並把這筆交易記進 sales_log。",
+    starter: `class Store:\n    def __init__(self):\n        self.inventory = {"咖啡豆": 10}\n        self.sales_log = []\n\n    def sell(self, name, qty, price):\n        self.inventory[name] -= qty\n        self.sales_log.append((name, qty, price))\n\nstore = Store()\ntry:\n    store.sell("咖啡豆", 3, 150)\n    store.sell("咖啡豆", 20, 150)\nexcept ValueError as e:\n    print("擋單：" + str(e))\nprint(store.inventory)`,
+    expected: "擋單：庫存不足\n{'咖啡豆': 7}",
+    hint: 'sell 開頭加上：\nif self.inventory.get(name, 0) < qty:\n    raise ValueError("庫存不足")',
+  },
+  {
+    stage: "第六階段 · 期末專題",
+    id: "6-3",
+    tag: "6-3",
+    title: "檢核點三：低庫存警示",
+    note: "low_stock_report 要幫店家自動找出「快沒貨的商品」，這是典型的「篩選 + list comprehension」應用，在真實的補貨決策裡非常實用。",
+    task: "完成 low_stock_report，回傳所有庫存小於 threshold 的商品名稱（list）。",
+    starter: `class Store:\n    def __init__(self):\n        self.inventory = {"咖啡豆": 3, "茶葉": 8, "糖包": 2}\n\n    def low_stock_report(self, threshold=5):\n        return []\n\nstore = Store()\nprint(store.low_stock_report())`,
+    expected: "['咖啡豆', '糖包']",
+    hint: "return [name for name, qty in self.inventory.items() if qty < threshold]",
+  },
+  {
+    stage: "第六階段 · 期末專題",
+    id: "6-4",
+    tag: "6-4",
+    title: "成品：今日營運報表",
+    note: "把庫存管理、銷售紀錄、低庫存警示全部整合起來，產出一份完整的營運報表——這就是一個小型商務管理系統的雛形，也是這整套課程真正想練成的能力。",
+    task: '完成 daily_report 方法，回傳一份兩行的報表字串：第一行「總營收：金額」，第二行「低庫存警示：商品名稱」（用「、」分隔多個商品，沒有低庫存商品時顯示「無」）。',
+    starter: `class Store:\n    def __init__(self):\n        self.inventory = {"咖啡豆": 3, "茶葉": 20}\n        self.sales_log = [("咖啡豆", 2, 150), ("茶葉", 5, 80)]\n\n    def low_stock_report(self, threshold=5):\n        return [name for name, qty in self.inventory.items() if qty < threshold]\n\n    def daily_report(self):\n        return ""\n\nstore = Store()\nprint(store.daily_report())`,
+    expected: "總營收：700\n低庫存警示：咖啡豆",
+    hint: 'total_revenue = sum(qty * price for _, qty, price in self.sales_log)\nlow_stock = self.low_stock_report()\nwarning = "、".join(low_stock) if low_stock else "無"\nreturn f"總營收：{total_revenue}\\n低庫存警示：{warning}"',
+  },
 ];
 
 const STAGES = [...new Set(TOPICS.map((t) => t.stage))];
@@ -627,6 +671,11 @@ const STAGE_INTROS = {
     subtitle: "把工具組合起來，解決真實問題",
     body:
       "這階段不再教新語法，而是練習把前面所有工具（迴圈、字典、函式、class）組合起來，處理接近真實工作場景的任務：篩選資料、排序、分組彙總、做一個小型系統。這也是資管系畢業後最常被要求的能力——不是「會寫程式」，而是「能用程式解決商業問題」。",
+  },
+  "第六階段 · 期末專題": {
+    subtitle: "做出一個真正的成品：商店營運系統",
+    body:
+      "這是整套課程的終點站，不再是單題練習，而是分四個檢核點，逐步蓋出一個完整的「商店營運系統」：管理庫存、處理銷售與擋單、產出低庫存警示、最後整合成一份營運報表。完成這一階段，代表你不只學會了語法，而是真的能用 Python 做出一個能解決商業問題的小型系統。",
   },
 };
 
@@ -826,6 +875,26 @@ function PythonNotebook() {
             />
           </div>
         </div>
+
+        {doneCount === TOPICS.length && (
+          <div
+            style={{
+              marginTop: 16,
+              maxWidth: 420,
+              background: "#3B4C9E",
+              color: "#F5F3EC",
+              borderRadius: 4,
+              padding: "12px 16px",
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 2 }}>
+              🎓 恭喜結業！{TOPICS.length} 題全部完成
+            </div>
+            <div style={{ fontSize: 12.5, color: "#D8DEF5" }}>
+              你已經從 print() 一路做出一個完整的商店營運系統，這就是真的學會了。
+            </div>
+          </div>
+        )}
       </header>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
