@@ -399,7 +399,7 @@ function PythonNotebook() {
       if (cancelled) return;
       window
         .loadPyodide({
-          indexURL: "https://cdnjs.cloudflare.com/ajax/libs/pyodide/0.24.1/",
+          indexURL: "https://cdn.jsdelivr.net/npm/pyodide@0.24.1/",
         })
         .then((pyodide) => {
           if (cancelled) return;
@@ -418,7 +418,7 @@ function PythonNotebook() {
       const script = document.createElement("script");
       script.id = scriptId;
       script.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/pyodide/0.24.1/pyodide.js";
+        "https://cdn.jsdelivr.net/npm/pyodide@0.24.1/pyodide.js";
       script.onload = init;
       script.onerror = () => !cancelled && setPyodideState("error");
       document.body.appendChild(script);
